@@ -212,7 +212,9 @@ fun IosStyledPlayer(
                     onVolumeChange = onVolumeChange,
                 )
             }
-            Spacer(Modifier.height(24.dp))
+            val bottomConfig = LocalConfiguration.current
+            val isBottomLandscape = bottomConfig.orientation == Configuration.ORIENTATION_LANDSCAPE
+            Spacer(Modifier.height(if (isBottomLandscape) 8.dp else 24.dp))
         }
     }
 }
@@ -459,7 +461,7 @@ private fun V8PlayerControlsContent(
                     .coerceIn(0f, 1f)
                 GlassTrack(
                     fraction = fraction,
-                    trackHeight = 10.dp,
+                    trackHeight = if (isLandscape) 5.dp else 10.dp,
                     tint = textBackgroundColor,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -497,7 +499,7 @@ private fun V8PlayerControlsContent(
             },
         )
 
-        if (nextUpMetadata != null) {
+        if (nextUpMetadata != null && !isLandscape) {
             Spacer(Modifier.height(6.dp))
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -560,12 +562,13 @@ private fun V8PlayerControlsContent(
             )
         }
 
-        Spacer(Modifier.height(if (isLandscape) 10.dp else 26.dp))
+        Spacer(Modifier.height(if (isLandscape) 6.dp else 26.dp))
 
         QueueCollapsedContentV8(
             textBackgroundColor = textBackgroundColor,
             onShowLyrics = onShowLyrics,
             onExpandQueue = onExpandQueue,
+            isLandscape = isLandscape,
         )
     }
 }
@@ -624,7 +627,11 @@ private fun QueueCollapsedContentV8(
     textBackgroundColor: Color,
     onShowLyrics: () -> Unit,
     onExpandQueue: () -> Unit,
+    isLandscape: Boolean = false,
 ) {
+    val buttonSize = if (isLandscape) 26.dp else 36.dp
+    val iconSize = if (isLandscape) 15.dp else 20.dp
+
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -636,14 +643,14 @@ private fun QueueCollapsedContentV8(
             onClick = onShowLyrics,
             shape = CircleShape,
             color = Color.Transparent,
-            modifier = Modifier.size(36.dp),
+            modifier = Modifier.size(buttonSize),
         ) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                 Icon(
                     painter = painterResource(R.drawable.lyrics_apple),
                     contentDescription = "Lyrics",
                     tint = textBackgroundColor.copy(alpha = 0.7f),
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(iconSize),
                 )
             }
         }
@@ -654,7 +661,7 @@ private fun QueueCollapsedContentV8(
         ) {
             V8DeviceSelector(
                 textBackgroundColor = textBackgroundColor,
-                modifier = Modifier.size(36.dp),
+                modifier = Modifier.size(buttonSize),
             )
         }
 
@@ -662,14 +669,14 @@ private fun QueueCollapsedContentV8(
             onClick = onExpandQueue,
             shape = CircleShape,
             color = Color.Transparent,
-            modifier = Modifier.size(36.dp),
+            modifier = Modifier.size(buttonSize),
         ) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                 Icon(
                     painter = painterResource(R.drawable.queue_music),
                     contentDescription = "Queue",
                     tint = textBackgroundColor.copy(alpha = 0.7f),
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(iconSize),
                 )
             }
         }
