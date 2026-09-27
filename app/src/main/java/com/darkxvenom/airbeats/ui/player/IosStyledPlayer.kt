@@ -3,6 +3,7 @@ package com.darkxvenom.airbeats.ui.player
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.content.pm.PackageManager
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
@@ -340,6 +341,9 @@ private fun V8PlayerControlsContent(
     playerVolume: Float,
     onVolumeChange: (Float) -> Unit,
 ) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxWidth(),
@@ -359,7 +363,7 @@ private fun V8PlayerControlsContent(
                 ) { title ->
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.titleLarge,
+                        style = if (isLandscape) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -368,7 +372,7 @@ private fun V8PlayerControlsContent(
                     )
                 }
 
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(if (isLandscape) 2.dp else 6.dp))
 
                 val artistsText = mediaMetadata.artists.joinToString(separator = ", ") { it.name }
                 AnimatedContent(
@@ -378,7 +382,7 @@ private fun V8PlayerControlsContent(
                 ) { artists ->
                     Text(
                         text = artists,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = if (isLandscape) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.titleMedium,
                         color = textBackgroundColor.copy(alpha = 0.7f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -395,7 +399,7 @@ private fun V8PlayerControlsContent(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(48.dp)
+                        .size(if (isLandscape) 34.dp else 48.dp)
                         .clip(CircleShape)
                         .background(
                             if (isLiked) textBackgroundColor.copy(alpha = 0.2f) else Color.Transparent
@@ -407,13 +411,13 @@ private fun V8PlayerControlsContent(
                         painter = painterResource(if (isLiked) R.drawable.favorite else R.drawable.favorite_border),
                         contentDescription = null,
                         tint = textBackgroundColor.copy(alpha = if (isLiked) 1f else 0.7f),
-                        modifier = Modifier.size(30.dp),
+                        modifier = Modifier.size(if (isLandscape) 20.dp else 30.dp),
                     )
                 }
 
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(if (isLandscape) 28.dp else 38.dp)
                         .clip(CircleShape)
                         .clickable {
                             menuState.show {
@@ -432,13 +436,13 @@ private fun V8PlayerControlsContent(
                         painter = painterResource(R.drawable.more_horiz),
                         contentDescription = null,
                         tint = textBackgroundColor.copy(alpha = 0.7f),
-                        modifier = Modifier.size(22.dp),
+                        modifier = Modifier.size(if (isLandscape) 18.dp else 22.dp),
                     )
                 }
             }
         }
 
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(if (isLandscape) 4.dp else 10.dp))
 
         val safeDuration = if (duration <= 0L) 0f else duration.toFloat()
         val safeValue = (sliderPosition ?: position).toFloat().coerceIn(0f, maxOf(0f, safeDuration))
@@ -525,7 +529,7 @@ private fun V8PlayerControlsContent(
             }
         }
 
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(if (isLandscape) 6.dp else 14.dp))
 
         V8PlaybackControls(
             playbackState = playbackState,
@@ -543,18 +547,20 @@ private fun V8PlayerControlsContent(
             shuffleModeEnabled = shuffleModeEnabled,
         )
 
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(if (isLandscape) 6.dp else 14.dp))
 
-        V8VolumeSlider(
-            volume = playerVolume,
-            onVolumeChange = onVolumeChange,
-            activeColor = textBackgroundColor,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = PlayerHorizontalPadding + 8.dp),
-        )
+        if (!isLandscape) {
+            V8VolumeSlider(
+                volume = playerVolume,
+                onVolumeChange = onVolumeChange,
+                activeColor = textBackgroundColor,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = PlayerHorizontalPadding + 8.dp),
+            )
+        }
 
-        Spacer(Modifier.height(26.dp))
+        Spacer(Modifier.height(if (isLandscape) 10.dp else 26.dp))
 
         QueueCollapsedContentV8(
             textBackgroundColor = textBackgroundColor,
@@ -1303,6 +1309,15 @@ private fun V8PlaybackControls(
     onShuffleClick: () -> Unit,
     shuffleModeEnabled: Boolean,
 ) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    val sideButtonSize = if (isLandscape) 40.dp else 56.dp
+    val sideIconSize = if (isLandscape) 24.dp else 38.dp
+    val centerButtonSize = if (isLandscape) 52.dp else 72.dp
+    val centerIconSize = if (isLandscape) 30.dp else 48.dp
+    val loadingIconSize = if (isLandscape) 24.dp else 36.dp
+
     Row(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
@@ -1315,14 +1330,14 @@ private fun V8PlaybackControls(
             enabled = canSkipPrevious,
             shape = CircleShape,
             color = Color.Transparent,
-            modifier = Modifier.size(56.dp),
+            modifier = Modifier.size(sideButtonSize),
         ) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                 Icon(
                     painter = painterResource(R.drawable.skip_previous),
                     contentDescription = null,
                     tint = textBackgroundColor.copy(alpha = if (canSkipPrevious) 1f else 0.4f),
-                    modifier = Modifier.size(38.dp),
+                    modifier = Modifier.size(sideIconSize),
                 )
             }
         }
@@ -1331,12 +1346,12 @@ private fun V8PlaybackControls(
             onClick = onPlayPause,
             shape = CircleShape,
             color = Color.Transparent,
-            modifier = Modifier.size(72.dp),
+            modifier = Modifier.size(centerButtonSize),
         ) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                 if (isLoading) {
                     CircularWavyProgressIndicator(
-                        modifier = Modifier.size(36.dp),
+                        modifier = Modifier.size(loadingIconSize),
                         color = textBackgroundColor,
                     )
                 } else {
@@ -1350,7 +1365,7 @@ private fun V8PlaybackControls(
                         ),
                         contentDescription = null,
                         tint = textBackgroundColor,
-                        modifier = Modifier.size(48.dp),
+                        modifier = Modifier.size(centerIconSize),
                     )
                 }
             }
@@ -1361,14 +1376,14 @@ private fun V8PlaybackControls(
             enabled = canSkipNext,
             shape = CircleShape,
             color = Color.Transparent,
-            modifier = Modifier.size(56.dp),
+            modifier = Modifier.size(sideButtonSize),
         ) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                 Icon(
                     painter = painterResource(R.drawable.skip_next),
                     contentDescription = null,
                     tint = textBackgroundColor.copy(alpha = if (canSkipNext) 1f else 0.4f),
-                    modifier = Modifier.size(38.dp),
+                    modifier = Modifier.size(sideIconSize),
                 )
             }
         }
