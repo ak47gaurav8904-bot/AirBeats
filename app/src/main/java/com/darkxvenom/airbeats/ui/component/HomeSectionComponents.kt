@@ -527,4 +527,172 @@ fun UniversalTopArtistsRow(
                         }
                     }
 
-                    if (ind
+                    if (index < 3) {
+                        Surface(
+                            shape = CircleShape,
+                            color = when (style) {
+                                HomeThemeStyle.SPOTIFY -> Color(0xFF1ED760)
+                                HomeThemeStyle.APPLE -> Color(0xFFFA2D48)
+                                else -> MaterialTheme.colorScheme.primary
+                            },
+                            modifier = Modifier.size(20.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = "${index + 1}",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = if (style == HomeThemeStyle.SPOTIFY) Color.Black else Color.White
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(6.dp))
+
+                Text(
+                    text = artist.name,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = textColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Universal Quick Access Tiles for Liked Songs, Mix, History, and Stats.
+ */
+@Composable
+fun UniversalQuickAccessTiles(
+    onLikedClick: () -> Unit,
+    onMixClick: () -> Unit,
+    onHistoryClick: () -> Unit,
+    onStatsClick: () -> Unit,
+    isGeneratingMix: Boolean = false,
+    modifier: Modifier = Modifier,
+    style: HomeThemeStyle = HomeThemeStyle.CLASSIC
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            QuickAccessTileItem(
+                title = "Liked Songs",
+                icon = Icons.Filled.Favorite,
+                containerColor = when (style) {
+                    HomeThemeStyle.SPOTIFY -> Color(0xFF282828)
+                    HomeThemeStyle.APPLE -> Color.White.copy(alpha = 0.1f)
+                    else -> MaterialTheme.colorScheme.primaryContainer
+                },
+                contentColor = when (style) {
+                    HomeThemeStyle.SPOTIFY, HomeThemeStyle.APPLE -> Color.White
+                    else -> MaterialTheme.colorScheme.onPrimaryContainer
+                },
+                onClick = onLikedClick,
+                modifier = Modifier.weight(1f)
+            )
+            QuickAccessTileItem(
+                title = if (isGeneratingMix) "Mixing..." else "Endless Mix",
+                icon = Icons.Filled.AutoAwesome,
+                containerColor = when (style) {
+                    HomeThemeStyle.SPOTIFY -> Color(0xFF1E3224)
+                    HomeThemeStyle.APPLE -> Color(0xFF3B1E28)
+                    else -> MaterialTheme.colorScheme.secondaryContainer
+                },
+                contentColor = when (style) {
+                    HomeThemeStyle.SPOTIFY -> Color(0xFF1ED760)
+                    HomeThemeStyle.APPLE -> Color(0xFFFA2D48)
+                    else -> MaterialTheme.colorScheme.onSecondaryContainer
+                },
+                onClick = onMixClick,
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            QuickAccessTileItem(
+                title = "History",
+                icon = Icons.Filled.History,
+                containerColor = when (style) {
+                    HomeThemeStyle.SPOTIFY -> Color(0xFF282828)
+                    HomeThemeStyle.APPLE -> Color.White.copy(alpha = 0.1f)
+                    else -> MaterialTheme.colorScheme.tertiaryContainer
+                },
+                contentColor = when (style) {
+                    HomeThemeStyle.SPOTIFY, HomeThemeStyle.APPLE -> Color.White
+                    else -> MaterialTheme.colorScheme.onTertiaryContainer
+                },
+                onClick = onHistoryClick,
+                modifier = Modifier.weight(1f)
+            )
+            QuickAccessTileItem(
+                title = "Stats",
+                icon = Icons.Filled.TrendingUp,
+                containerColor = when (style) {
+                    HomeThemeStyle.SPOTIFY -> Color(0xFF282828)
+                    HomeThemeStyle.APPLE -> Color.White.copy(alpha = 0.1f)
+                    else -> MaterialTheme.colorScheme.surfaceContainerHigh
+                },
+                contentColor = when (style) {
+                    HomeThemeStyle.SPOTIFY, HomeThemeStyle.APPLE -> Color.White
+                    else -> MaterialTheme.colorScheme.onSurface
+                },
+                onClick = onStatsClick,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun QuickAccessTileItem(
+    title: String,
+    icon: ImageVector,
+    containerColor: Color,
+    contentColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        modifier = modifier
+            .height(54.dp)
+            .tvFocusBorder(cornerRadius = 14.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = contentColor,
+                modifier = Modifier.size(20.dp)
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = contentColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
