@@ -3,6 +3,7 @@ package com.darkxvenom.airbeats.ui.component
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,13 +48,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -72,6 +76,28 @@ val HOME_TASTE_TAGS = listOf(
 
 enum class HomeThemeStyle {
     CLASSIC, SPOTIFY, APPLE, NEW_CLASSIC, MATERIAL
+}
+
+/**
+ * TV / D-pad focus border. Shows a white outline around any item when it
+ * receives focus from a D-pad or remote (Android TV), so users can see
+ * which item is currently selected while navigating.
+ */
+fun Modifier.tvFocusBorder(
+    borderColor: Color = Color.White,
+    cornerRadius: Dp = 12.dp
+): Modifier = composed {
+    var isFocused by remember { mutableStateOf(false) }
+    this
+        .onFocusChanged { isFocused = it.isFocused }
+        .focusable()
+        .then(
+            if (isFocused) {
+                Modifier.border(2.dp, borderColor, RoundedCornerShape(cornerRadius))
+            } else {
+                Modifier
+            }
+        )
 }
 
 /**
@@ -324,7 +350,10 @@ fun UniversalArtistSpotlightCard(
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = cardColor),
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .tvFocusBorder(cornerRadius = 20.dp)
+            .clickable(onClick = onOpenArtist)
     ) {
         Row(
             modifier = Modifier
@@ -469,6 +498,7 @@ fun UniversalTopArtistsRow(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .width(82.dp)
+                    .tvFocusBorder(cornerRadius = 12.dp)
                     .clickable { onArtistClick(artist.id) }
             ) {
                 Box(contentAlignment = Alignment.BottomEnd) {
@@ -497,170 +527,4 @@ fun UniversalTopArtistsRow(
                         }
                     }
 
-                    if (index < 3) {
-                        Surface(
-                            shape = CircleShape,
-                            color = when (style) {
-                                HomeThemeStyle.SPOTIFY -> Color(0xFF1ED760)
-                                HomeThemeStyle.APPLE -> Color(0xFFFA2D48)
-                                else -> MaterialTheme.colorScheme.primary
-                            },
-                            modifier = Modifier.size(20.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = "${index + 1}",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Black,
-                                    color = if (style == HomeThemeStyle.SPOTIFY) Color.Black else Color.White
-                                )
-                            }
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(6.dp))
-
-                Text(
-                    text = artist.name,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = textColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-    }
-}
-
-/**
- * Universal Quick Access Tiles for Liked Songs, Mix, History, and Stats.
- */
-@Composable
-fun UniversalQuickAccessTiles(
-    onLikedClick: () -> Unit,
-    onMixClick: () -> Unit,
-    onHistoryClick: () -> Unit,
-    onStatsClick: () -> Unit,
-    isGeneratingMix: Boolean = false,
-    modifier: Modifier = Modifier,
-    style: HomeThemeStyle = HomeThemeStyle.CLASSIC
-) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            QuickAccessTileItem(
-                title = "Liked Songs",
-                icon = Icons.Filled.Favorite,
-                containerColor = when (style) {
-                    HomeThemeStyle.SPOTIFY -> Color(0xFF282828)
-                    HomeThemeStyle.APPLE -> Color.White.copy(alpha = 0.1f)
-                    else -> MaterialTheme.colorScheme.primaryContainer
-                },
-                contentColor = when (style) {
-                    HomeThemeStyle.SPOTIFY, HomeThemeStyle.APPLE -> Color.White
-                    else -> MaterialTheme.colorScheme.onPrimaryContainer
-                },
-                onClick = onLikedClick,
-                modifier = Modifier.weight(1f)
-            )
-            QuickAccessTileItem(
-                title = if (isGeneratingMix) "Mixing..." else "Endless Mix",
-                icon = Icons.Filled.AutoAwesome,
-                containerColor = when (style) {
-                    HomeThemeStyle.SPOTIFY -> Color(0xFF1E3224)
-                    HomeThemeStyle.APPLE -> Color(0xFF3B1E28)
-                    else -> MaterialTheme.colorScheme.secondaryContainer
-                },
-                contentColor = when (style) {
-                    HomeThemeStyle.SPOTIFY -> Color(0xFF1ED760)
-                    HomeThemeStyle.APPLE -> Color(0xFFFA2D48)
-                    else -> MaterialTheme.colorScheme.onSecondaryContainer
-                },
-                onClick = onMixClick,
-                modifier = Modifier.weight(1f)
-            )
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            QuickAccessTileItem(
-                title = "History",
-                icon = Icons.Filled.History,
-                containerColor = when (style) {
-                    HomeThemeStyle.SPOTIFY -> Color(0xFF282828)
-                    HomeThemeStyle.APPLE -> Color.White.copy(alpha = 0.1f)
-                    else -> MaterialTheme.colorScheme.tertiaryContainer
-                },
-                contentColor = when (style) {
-                    HomeThemeStyle.SPOTIFY, HomeThemeStyle.APPLE -> Color.White
-                    else -> MaterialTheme.colorScheme.onTertiaryContainer
-                },
-                onClick = onHistoryClick,
-                modifier = Modifier.weight(1f)
-            )
-            QuickAccessTileItem(
-                title = "Stats",
-                icon = Icons.Filled.TrendingUp,
-                containerColor = when (style) {
-                    HomeThemeStyle.SPOTIFY -> Color(0xFF282828)
-                    HomeThemeStyle.APPLE -> Color.White.copy(alpha = 0.1f)
-                    else -> MaterialTheme.colorScheme.surfaceContainerHigh
-                },
-                contentColor = when (style) {
-                    HomeThemeStyle.SPOTIFY, HomeThemeStyle.APPLE -> Color.White
-                    else -> MaterialTheme.colorScheme.onSurface
-                },
-                onClick = onStatsClick,
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
-
-@Composable
-private fun QuickAccessTileItem(
-    title: String,
-    icon: ImageVector,
-    containerColor: Color,
-    contentColor: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        onClick = onClick,
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        modifier = modifier.height(54.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = contentColor,
-                modifier = Modifier.size(20.dp)
-            )
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-                color = contentColor,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
+                    if (ind
