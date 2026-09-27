@@ -24,8 +24,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,6 +51,7 @@ fun AppleNavigationBar(
 ) {
     val layer = rememberGraphicsLayer()
     val luminanceAnimation = remember { Animatable(0.3f) }
+    val focusManager = LocalFocusManager.current
 
     val themeContrastColor by animateColorAsState(
         targetValue = Color.White,
@@ -60,7 +68,15 @@ fun AppleNavigationBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .wrapContentSize(),
+            .wrapContentSize()
+            .onPreviewKeyEvent { keyEvent ->
+                if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.DirectionUp) {
+                    focusManager.moveFocus(FocusDirection.Up)
+                    true
+                } else {
+                    false
+                }
+            },
         verticalAlignment = Alignment.CenterVertically
     ) {
         HorizontalFloatingToolbar(
