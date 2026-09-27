@@ -2,6 +2,11 @@ package com.darkxvenom.airbeats.ui.theme
 
 import android.graphics.Bitmap
 import android.os.Build
+import androidx.compose.foundation.Indication
+import androidx.compose.foundation.IndicationInstance
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.InteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -11,11 +16,18 @@ import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.palette.graphics.Palette
 import com.darkxvenom.airbeats.constants.PlayerBackgroundStyle
 import com.darkxvenom.airbeats.constants.ThemeColorEffect
@@ -35,6 +47,43 @@ import androidx.compose.runtime.saveable.Saver
 import com.darkxvenom.airbeats.constants.AppFont
 
 val DefaultThemeColor = Color(0xFF4285F4)
+
+/**
+ * A global focus indicator for D-pad / TV remote navigation. Overriding
+ * LocalIndication makes every clickable Card, Surface, Button, and
+ * Modifier.clickable across the whole app automatically draw a visible
+ * white border whenever it receives keyboard/D-pad focus, without needing
+ * to touch each individual screen.
+ */
+private object TvFocusIndication : Indication {
+    private class TvFocusIndicationInstance(
+        private val isFocused: androidx.compose.runtime.State<Boolean>,
+    ) : IndicationInstance {
+        override fun ContentDrawScope.drawIndication() {
+            drawContent()
+            if (isFocused.value) {
+                val strokeWidthPx = 3.dp.toPx()
+                val cornerRadiusPx = 14.dp.toPx()
+                drawRoundRect(
+                    color = Color.White,
+                    topLeft = Offset(strokeWidthPx / 2f, strokeWidthPx / 2f),
+                    size = Size(
+                        width = (size.width - strokeWidthPx).coerceAtLeast(0f),
+                        height = (size.height - strokeWidthPx).coerceAtLeast(0f),
+                    ),
+                    cornerRadius = CornerRadius(cornerRadiusPx, cornerRadiusPx),
+                    style = Stroke(width = strokeWidthPx),
+                )
+            }
+        }
+    }
+
+    @Composable
+    override fun rememberUpdatedInstance(interactionSource: InteractionSource): IndicationInstance {
+        val isFocused = interactionSource.collectIsFocusedAsState()
+        return remember(interactionSource) { TvFocusIndicationInstance(isFocused) }
+    }
+}
 
 val ColorSaver = Saver<Color, Int>(
     save = { it.toArgb() },
@@ -101,8 +150,11 @@ fun AirBeatsTheme(
         typography = typography,
         shapes = MaterialTheme.shapes,
         motionScheme = motionScheme,
-        content = content
-    )
+    ) {
+        CompositionLocalProvider(LocalIndication provides TvFocusIndication) {
+            content()
+        }
+    }
 }
 
 fun Bitmap.toSoftwareBitmap(): Bitmap {
