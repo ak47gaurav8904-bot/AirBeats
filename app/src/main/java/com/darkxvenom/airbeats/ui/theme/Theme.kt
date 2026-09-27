@@ -2,11 +2,10 @@ package com.darkxvenom.airbeats.ui.theme
 
 import android.graphics.Bitmap
 import android.os.Build
-import androidx.compose.foundation.Indication
-import androidx.compose.foundation.IndicationInstance
+import androidx.compose.foundation.IndicationNodeFactory
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.FocusInteraction
 import androidx.compose.foundation.interaction.InteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -18,6 +17,7 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -26,6 +26,9 @@ import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.node.DelegatableNode
+import androidx.compose.ui.node.DrawModifierNode
+import androidx.compose.ui.node.invalidateDraw
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.palette.graphics.Palette
@@ -45,6 +48,7 @@ import com.google.material.color.scheme.SchemeVibrant
 import com.google.material.color.score.Score
 import androidx.compose.runtime.saveable.Saver
 import com.darkxvenom.airbeats.constants.AppFont
+import kotlinx.coroutines.launch
 
 val DefaultThemeColor = Color(0xFF4285F4)
 
@@ -53,35 +57,56 @@ val DefaultThemeColor = Color(0xFF4285F4)
  * LocalIndication makes every clickable Card, Surface, Button, and
  * Modifier.clickable across the whole app automatically draw a visible
  * white border whenever it receives keyboard/D-pad focus, without needing
- * to touch each individual screen.
+ * to touch each individual screen. Uses the modern Modifier.Node based
+ * IndicationNodeFactory API (not the deprecated Indication interface).
  */
-private object TvFocusIndication : Indication {
-    private class TvFocusIndicationInstance(
-        private val isFocused: androidx.compose.runtime.State<Boolean>,
-    ) : IndicationInstance {
-        override fun ContentDrawScope.drawIndication() {
-            drawContent()
-            if (isFocused.value) {
-                val strokeWidthPx = 3.dp.toPx()
-                val cornerRadiusPx = 14.dp.toPx()
-                drawRoundRect(
-                    color = Color.White,
-                    topLeft = Offset(strokeWidthPx / 2f, strokeWidthPx / 2f),
-                    size = Size(
-                        width = (size.width - strokeWidthPx).coerceAtLeast(0f),
-                        height = (size.height - strokeWidthPx).coerceAtLeast(0f),
-                    ),
-                    cornerRadius = CornerRadius(cornerRadiusPx, cornerRadiusPx),
-                    style = Stroke(width = strokeWidthPx),
-                )
+private object TvFocusIndication : IndicationNodeFactory {
+    override fun create(interactionSource: InteractionSource): DelegatableNode {
+        return TvFocusIndicationNode(interactionSource)
+    }
+
+    override fun equals(other: Any?): Boolean = other === this
+    override fun hashCode(): Int = System.identityHashCode(this)
+}
+
+private class TvFocusIndicationNode(
+    private val interactionSource: InteractionSource,
+) : Modifier.Node(), DrawModifierNode {
+    private var isFocused = false
+
+    override fun onAttach() {
+        coroutineScope.launch {
+            interactionSource.interactions.collect { interaction ->
+                when (interaction) {
+                    is FocusInteraction.Focus -> {
+                        isFocused = true
+                        invalidateDraw()
+                    }
+                    is FocusInteraction.Unfocus -> {
+                        isFocused = false
+                        invalidateDraw()
+                    }
+                }
             }
         }
     }
 
-    @Composable
-    override fun rememberUpdatedInstance(interactionSource: InteractionSource): IndicationInstance {
-        val isFocused = interactionSource.collectIsFocusedAsState()
-        return remember(interactionSource) { TvFocusIndicationInstance(isFocused) }
+    override fun ContentDrawScope.draw() {
+        drawContent()
+        if (isFocused) {
+            val strokeWidthPx = 3.dp.toPx()
+            val cornerRadiusPx = 14.dp.toPx()
+            drawRoundRect(
+                color = Color.White,
+                topLeft = Offset(strokeWidthPx / 2f, strokeWidthPx / 2f),
+                size = Size(
+                    width = (size.width - strokeWidthPx).coerceAtLeast(0f),
+                    height = (size.height - strokeWidthPx).coerceAtLeast(0f),
+                ),
+                cornerRadius = CornerRadius(cornerRadiusPx, cornerRadiusPx),
+                style = Stroke(width = strokeWidthPx),
+            )
+        }
     }
 }
 
