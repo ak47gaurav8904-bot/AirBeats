@@ -1932,23 +1932,6 @@ class MainActivity : ComponentActivity() {
                                     }
                                     }
 
-                                    // TV: bottom nav is hidden, so show a single Search button at the top
-                                    if (isTvDevice && !active &&
-                                        navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route }
-                                    ) {
-                                        IconButton(
-                                            onClick = { onActiveChange(true) },
-                                            modifier = Modifier
-                                                .align(Alignment.TopEnd)
-                                                .statusBarsPadding()
-                                                .padding(top = 8.dp, end = 24.dp)
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.search),
-                                                contentDescription = "Search"
-                                            )
-                                        }
-                                    }
                                     }
                                 }
 
