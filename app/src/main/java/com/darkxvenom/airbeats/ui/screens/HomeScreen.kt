@@ -1212,6 +1212,10 @@ fun ModernHomeTopBarInline(
     onSearchClick: () -> Unit
 ) {
     val context = LocalContext.current
+    val isTvDevice = remember {
+        (context.getSystemService(android.content.Context.UI_MODE_SERVICE) as android.app.UiModeManager)
+            .currentModeType == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION
+    }
     val avatarManager = remember { AvatarPreferenceManager(context) }
     val currentSelection by avatarManager
         .getAvatarSelection
@@ -1335,6 +1339,13 @@ fun ModernHomeTopBarInline(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+
+                if (isTvDevice) {
+                    CircleIconButton(
+                        icon = R.drawable.search,
+                        onClick = onSearchClick
+                    )
+                }
 
                 CircleIconButton(
                     icon = R.drawable.notification_on,
