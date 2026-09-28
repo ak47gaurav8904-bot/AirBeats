@@ -55,6 +55,14 @@ fun BoxScope.HomeFloatingActions(
     modifier: Modifier = Modifier,
     lazyListState: LazyListState? = null,
 ) {
+    val tvContext = androidx.compose.ui.platform.LocalContext.current
+    val isTvDevice = remember {
+        (tvContext.getSystemService(android.content.Context.UI_MODE_SERVICE) as android.app.UiModeManager)
+            .currentModeType == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION
+    }
+    // No floating 3-dot button on TV (remote navigation)
+    if (isTvDevice) return
+
     var expanded by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
     val coroutineScope = rememberCoroutineScope()
