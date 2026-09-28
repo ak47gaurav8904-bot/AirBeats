@@ -71,6 +71,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -954,11 +955,19 @@ class MainActivity : ComponentActivity() {
                                             navBackStackEntry?.destination?.route?.startsWith("search/") == true
                                 }
 
+                            val tvContext = androidx.compose.ui.platform.LocalContext.current
+                            val isTvDevice = remember {
+                                (tvContext.getSystemService(Context.UI_MODE_SERVICE) as android.app.UiModeManager)
+                                    .currentModeType == Configuration.UI_MODE_TYPE_TELEVISION
+                            }
+
                             val shouldShowNavigationBar =
-                                remember(navBackStackEntry, active) {
-                                    navBackStackEntry?.destination?.route == null ||
-                                            navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route } &&
-                                            !active
+                                remember(navBackStackEntry, active, isTvDevice) {
+                                    !isTvDevice && (
+                                        navBackStackEntry?.destination?.route == null ||
+                                                navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route } &&
+                                                !active
+                                    )
                                 }
 
                             val navigationBarHeight by animateDpAsState(
@@ -1254,6 +1263,7 @@ class MainActivity : ComponentActivity() {
                                     playIntroAnimation = false
                                 }
 
+                                val contentFocusRequester = remember { FocusRequester() }
                                 Scaffold(
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1695,6 +1705,9 @@ class MainActivity : ComponentActivity() {
                                                              selectedIndex = selectedIndex,
                                                              onItemSelected = onItemSelectedAction,
                                                              backdrop = backdrop,
+                                                             onFocusUpFromBar = {
+                                                                 runCatching { contentFocusRequester.requestFocus() }
+                                                             },
                                                              modifier = Modifier
                                                                  .fillMaxSize()
                                                                  .offset(y = offsetY)
@@ -1747,6 +1760,8 @@ class MainActivity : ComponentActivity() {
                                     Box(
                                         modifier = Modifier
                                             .fillMaxSize()
+                                            .focusRequester(contentFocusRequester)
+                                            .focusGroup()
                                             .focusProperties {
                                                 // When the full player or fullscreen lyrics is open, the screen
                                                 // underneath must not take D-pad focus (TV remote).
@@ -1915,6 +1930,24 @@ class MainActivity : ComponentActivity() {
                                             onSearchClick = { onActiveChange(true) }
                                         )
                                     }
+                                    }
+
+                                    // TV: bottom nav is hidden, so show a single Search button at the top
+                                    if (isTvDevice && !active &&
+                                        navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route }
+                                    ) {
+                                        IconButton(
+                                            onClick = { onActiveChange(true) },
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .statusBarsPadding()
+                                                .padding(top = 8.dp, end = 24.dp)
+                                        ) {
+                                            Icon(
+                                                painter = painterResource(R.drawable.search),
+                                                contentDescription = "Search"
+                                            )
+                                        }
                                     }
                                     }
                                 }
