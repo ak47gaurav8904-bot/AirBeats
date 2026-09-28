@@ -126,6 +126,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusProperties
 import com.darkxvenom.airbeats.ui.component.CircleIconButton
 import com.darkxvenom.airbeats.ui.component.SwipeBackContainer
 import com.darkxvenom.airbeats.ui.component.tabSwipeGesture
@@ -1746,6 +1747,11 @@ class MainActivity : ComponentActivity() {
                                     Box(
                                         modifier = Modifier
                                             .fillMaxSize()
+                                            .focusProperties {
+                                                // When the full player or fullscreen lyrics is open, the screen
+                                                // underneath must not take D-pad focus (TV remote).
+                                                canFocus = playerBottomSheetState.progress < 0.5f && !showFullscreenLyrics
+                                            }
                                             .layerBackdrop(backdrop)
                                     ) {
                                         var transitionDirection =
