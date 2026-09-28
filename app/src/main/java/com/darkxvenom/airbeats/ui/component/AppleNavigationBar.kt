@@ -47,7 +47,8 @@ fun AppleNavigationBar(
     items: List<CurvedBottomNavigationItem>,
     selectedIndex: Int,
     onItemSelected: (Int) -> Unit,
-    backdrop: PlatformBackdrop
+    backdrop: PlatformBackdrop,
+    onFocusUpFromBar: (() -> Unit)? = null
 ) {
     val layer = rememberGraphicsLayer()
     val luminanceAnimation = remember { Animatable(0.3f) }
@@ -71,7 +72,9 @@ fun AppleNavigationBar(
             .wrapContentSize()
             .onPreviewKeyEvent { keyEvent ->
                 if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.DirectionUp) {
-                    focusManager.moveFocus(FocusDirection.Up)
+                    // Explicitly hand focus to the screen content (geometry based search fails here)
+                    val handOver = onFocusUpFromBar
+                    if (handOver != null) handOver() else focusManager.moveFocus(FocusDirection.Up)
                     true
                 } else {
                     false
