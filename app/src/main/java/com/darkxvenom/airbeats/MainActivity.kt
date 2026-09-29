@@ -1263,7 +1263,6 @@ class MainActivity : ComponentActivity() {
                                     playIntroAnimation = false
                                 }
 
-                                val contentFocusRequester = remember { FocusRequester() }
                                 Scaffold(
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1705,9 +1704,6 @@ class MainActivity : ComponentActivity() {
                                                              selectedIndex = selectedIndex,
                                                              onItemSelected = onItemSelectedAction,
                                                              backdrop = backdrop,
-                                                             onFocusUpFromBar = {
-                                                                 runCatching { contentFocusRequester.requestFocus() }
-                                                             },
                                                              modifier = Modifier
                                                                  .fillMaxSize()
                                                                  .offset(y = offsetY)
@@ -1760,13 +1756,6 @@ class MainActivity : ComponentActivity() {
                                     Box(
                                         modifier = Modifier
                                             .fillMaxSize()
-                                            .focusRequester(contentFocusRequester)
-                                            .focusGroup()
-                                            .focusProperties {
-                                                // When the full player or fullscreen lyrics is open, the screen
-                                                // underneath must not take D-pad focus (TV remote).
-                                                canFocus = playerBottomSheetState.progress < 0.5f && !showFullscreenLyrics
-                                            }
                                             .layerBackdrop(backdrop)
                                     ) {
                                         var transitionDirection =
