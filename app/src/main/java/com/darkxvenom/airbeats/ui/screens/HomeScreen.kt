@@ -1359,6 +1359,7 @@ fun ModernHomeTopBarInline(
                         }
                     }
                 }
+                }
             }
 
             Spacer(modifier = Modifier.weight(1f))
