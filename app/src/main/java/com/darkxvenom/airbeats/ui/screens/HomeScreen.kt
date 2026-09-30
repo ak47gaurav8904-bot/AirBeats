@@ -186,6 +186,7 @@ import androidx.compose.foundation.layout.PaddingValues
 fun HomeScreen(
     navController: NavController,
     onSearchClick: () -> Unit,
+    playerBottomSheetState: com.darkxvenom.airbeats.ui.component.BottomSheetState? = null,
     viewModel: HomeViewModel = hiltViewModel(),
 )
 {
@@ -469,7 +470,8 @@ fun HomeScreen(
                 item(key = "home_top_bar") {
                     ModernHomeTopBarInline(
                         navController = navController,
-                        onSearchClick = onSearchClick
+                        onSearchClick = onSearchClick,
+                        playerBottomSheetState = playerBottomSheetState
                     )
                 }
 
@@ -819,6 +821,7 @@ fun HomeScreen(
                             )
                         }
                     }
+                }
                 }
             }
 
@@ -1209,7 +1212,8 @@ fun HomeScreen(
 @Composable
 fun ModernHomeTopBarInline(
     navController: NavController,
-    onSearchClick: () -> Unit
+    onSearchClick: () -> Unit,
+    playerBottomSheetState: com.darkxvenom.airbeats.ui.component.BottomSheetState? = null
 ) {
     val context = LocalContext.current
     val isTvDevice = remember {
@@ -1223,6 +1227,7 @@ fun ModernHomeTopBarInline(
 
     val playerConnection = LocalPlayerConnection.current
     val isPlaying by playerConnection?.isPlaying?.collectAsState() ?: remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
     val userName = LocalUserName.current
     val displayName = if (userName.isNotEmpty()) userName else "Friend"
@@ -1264,6 +1269,8 @@ fun ModernHomeTopBarInline(
 
                 val playerConnection = LocalPlayerConnection.current
                 val isPlaying by playerConnection?.isPlaying?.collectAsState() ?: remember { mutableStateOf(false) }
+                val nowPlayingMetadata by playerConnection?.mediaMetadata?.collectAsState() ?: remember { mutableStateOf(null) }
+                val showNowPlayingThumbnail = isTvDevice && nowPlayingMetadata != null
 
 // Simple colorful gradient (you can later extract from artwork)
                 val songColors = listOf(
@@ -1278,6 +1285,27 @@ fun ModernHomeTopBarInline(
                     modifier = Modifier.matchParentSize()
                 )
 
+                if (showNowPlayingThumbnail) {
+                    // TV: show the currently playing song's artwork here instead of the
+                    // profile avatar. Tapping it opens the full-screen player, since the
+                    // bottom mini-player/nav bar isn't shown on TV.
+                    Box(
+                        modifier = Modifier
+                            .size(60.dp)
+                            .clip(CircleShape)
+                            .combinedClickable {
+                                coroutineScope.launch { playerBottomSheetState?.expandSoft() }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AsyncImage(
+                            model = nowPlayingMetadata?.thumbnailUrl,
+                            contentDescription = "Now playing: ${nowPlayingMetadata?.title}",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                } else {
                 Box(
                     modifier = Modifier
                         .size(60.dp)
