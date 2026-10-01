@@ -75,7 +75,11 @@ fun NavGraphBuilder.navigationBuilder(
         } else if (homeScreenStyle == HomeScreenStyle.MATERIAL) {
             com.darkxvenom.airbeats.ui.screens.material.MaterialHomeScreen(navController = navController, onSearchClick = onSearchClick)
         } else {
-            HomeScreen(navController = navController, onSearchClick = onSearchClick)
+            HomeScreen(
+                navController = navController,
+                onSearchClick = onSearchClick,
+                playerBottomSheetState = playerBottomSheetState
+            )
         }
     }
 
