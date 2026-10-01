@@ -72,10 +72,26 @@ class YouTubeQueue(
             }
         endpoint = nextResult.endpoint
         continuation = nextResult.continuation
+
+        // When a specific song was clicked, it must always be the first/current item.
+        // YouTube's next() response can return a currentIndex that does not reliably
+        // point to the clicked song, which could make another song from the same
+        // radio/queue start instead. Keep the explicitly selected song first and
+        // use the response only to populate the following queue items.
+        val selectedItem = preloadItem?.toMediaItem()
+        val responseItems = nextResult.items
+            .map { it.toMediaItem() }
+            .filter { selectedItem == null || it.mediaId != selectedItem.mediaId }
+        val items = if (selectedItem != null) {
+            listOf(selectedItem) + responseItems
+        } else {
+            responseItems
+        }
+
         return Queue.Status(
-            title = nextResult.title,
-            items = nextResult.items.map { it.toMediaItem() },
-            mediaItemIndex = nextResult.currentIndex ?: 0,
+            title = nextResult.title ?: preloadItem?.title,
+            items = items,
+            mediaItemIndex = 0,
         )
     }
 
