@@ -73,6 +73,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import com.darkxvenom.airbeats.ui.component.ChipsRow
+import com.darkxvenom.airbeats.ui.component.BottomSheetState
 import com.darkxvenom.airbeats.ui.component.TopFadeBlur
 import com.darkxvenom.airbeats.ui.component.isFrostedGlassUiEnabled
 import com.darkxvenom.airbeats.ui.component.HomeTasteStrip
@@ -88,6 +89,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import dev.chrisbanes.haze.HazeState
@@ -186,7 +190,7 @@ import androidx.compose.foundation.layout.PaddingValues
 fun HomeScreen(
     navController: NavController,
     onSearchClick: () -> Unit,
-    playerBottomSheetState: com.darkxvenom.airbeats.ui.component.BottomSheetState? = null,
+    playerBottomSheetState: BottomSheetState,
     viewModel: HomeViewModel = hiltViewModel(),
 )
 {
@@ -822,7 +826,6 @@ fun HomeScreen(
                         }
                     }
                 }
-                }
             }
 
             if (isSectionVisible(com.darkxvenom.airbeats.constants.MaterialHomeSection.TOP_ARTISTS)) {
@@ -1213,7 +1216,7 @@ fun HomeScreen(
 fun ModernHomeTopBarInline(
     navController: NavController,
     onSearchClick: () -> Unit,
-    playerBottomSheetState: com.darkxvenom.airbeats.ui.component.BottomSheetState? = null
+    playerBottomSheetState: BottomSheetState
 ) {
     val context = LocalContext.current
     val isTvDevice = remember {
@@ -1227,10 +1230,14 @@ fun ModernHomeTopBarInline(
 
     val playerConnection = LocalPlayerConnection.current
     val isPlaying by playerConnection?.isPlaying?.collectAsState() ?: remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
+
+    val mediaMetadata by playerConnection?.mediaMetadata?.collectAsState() ?: remember { mutableStateOf(null) }
 
     val userName = LocalUserName.current
     val displayName = if (userName.isNotEmpty()) userName else "Friend"
+
+    val nowPlayingFocusRequester = remember { FocusRequester() }
+    val searchFocusRequester = remember { FocusRequester() }
 
     val currentVersion = BuildConfig.VERSION_NAME
     var showUpdateIcon by remember { mutableStateOf(false) }
@@ -1269,8 +1276,6 @@ fun ModernHomeTopBarInline(
 
                 val playerConnection = LocalPlayerConnection.current
                 val isPlaying by playerConnection?.isPlaying?.collectAsState() ?: remember { mutableStateOf(false) }
-                val nowPlayingMetadata by playerConnection?.mediaMetadata?.collectAsState() ?: remember { mutableStateOf(null) }
-                val showNowPlayingThumbnail = isTvDevice && nowPlayingMetadata != null
 
 // Simple colorful gradient (you can later extract from artwork)
                 val songColors = listOf(
@@ -1285,27 +1290,6 @@ fun ModernHomeTopBarInline(
                     modifier = Modifier.matchParentSize()
                 )
 
-                if (showNowPlayingThumbnail) {
-                    // TV: show the currently playing song's artwork here instead of the
-                    // profile avatar. Tapping it opens the full-screen player, since the
-                    // bottom mini-player/nav bar isn't shown on TV.
-                    Box(
-                        modifier = Modifier
-                            .size(60.dp)
-                            .clip(CircleShape)
-                            .combinedClickable {
-                                coroutineScope.launch { playerBottomSheetState?.expandSoft() }
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        AsyncImage(
-                            model = nowPlayingMetadata?.thumbnailUrl,
-                            contentDescription = "Now playing: ${nowPlayingMetadata?.title}",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
-                } else {
                 Box(
                     modifier = Modifier
                         .size(60.dp)
@@ -1359,7 +1343,6 @@ fun ModernHomeTopBarInline(
                         }
                     }
                 }
-                }
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -1370,9 +1353,62 @@ fun ModernHomeTopBarInline(
             ) {
 
                 if (isTvDevice) {
+                    if (mediaMetadata != null) {
+                        Row(
+                            modifier = Modifier
+                                .width(230.dp)
+                                .height(52.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                .focusRequester(nowPlayingFocusRequester)
+                                .focusProperties {
+                                    right = searchFocusRequester
+                                }
+                                .clickable { playerBottomSheetState.expandSoft() },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = mediaMetadata?.thumbnailUrl?.highQualityThumbnail(),
+                                contentDescription = "Now Playing",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .padding(start = 4.dp)
+                                    .size(44.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                            )
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(horizontal = 10.dp),
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = mediaMetadata?.title.orEmpty(),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = mediaMetadata?.artists?.joinToString { it.name }.orEmpty(),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
                     CircleIconButton(
                         icon = R.drawable.search,
-                        onClick = onSearchClick
+                        onClick = onSearchClick,
+                        modifier = Modifier
+                            .focusRequester(searchFocusRequester)
+                            .focusProperties {
+                                left = nowPlayingFocusRequester
+                            }
                     )
                 }
 
