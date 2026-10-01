@@ -11,18 +11,26 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.ui.util.fastForEach
 
 @ExperimentalFoundationApi
-fun SnapLayoutInfoProvider(
+fun LazyGridSnapLayoutInfoProvider(
     lazyGridState: LazyGridState,
     positionInLayout: (layoutSize: Float, itemSize: Float) -> Float = { layoutSize, itemSize ->
         (layoutSize / 2f - itemSize / 2f)
     },
 ): SnapLayoutInfoProvider = object : SnapLayoutInfoProvider {
+
     private val layoutInfo: LazyGridLayoutInfo
         get() = lazyGridState.layoutInfo
 
-    override fun calculateApproachOffset(velocity: Float, decayOffset: Float): Float = 0f
-    override fun calculateSnapOffset(velocity: Float): Float {
+    override fun calculateApproachOffset(
+        velocity: Float,
+        decayOffset: Float
+    ): Float = 0f
+
+    override fun calculateSnapOffset(
+        velocity: Float
+    ): Float {
         val bounds = calculateSnappingOffsetBounds()
+
         return when {
             velocity < 0 -> bounds.start
             velocity > 0 -> bounds.endInclusive
@@ -35,14 +43,16 @@ fun SnapLayoutInfoProvider(
         var upperBoundOffset = Float.POSITIVE_INFINITY
 
         layoutInfo.visibleItemsInfo.fastForEach { item ->
-            val offset = calculateDistanceToDesiredSnapPosition(layoutInfo, item, positionInLayout)
+            val offset = calculateDistanceToDesiredSnapPosition(
+                layoutInfo,
+                item,
+                positionInLayout
+            )
 
-            // Find item that is closest to the center
             if (offset <= 0 && offset > lowerBoundOffset) {
                 lowerBoundOffset = offset
             }
 
-            // Find item that is closest to center, but after it
             if (offset >= 0 && offset < upperBoundOffset) {
                 upperBoundOffset = offset
             }
@@ -58,13 +68,24 @@ fun calculateDistanceToDesiredSnapPosition(
     positionInLayout: (layoutSize: Float, itemSize: Float) -> Float,
 ): Float {
     val containerSize =
-        layoutInfo.singleAxisViewportSize - layoutInfo.beforeContentPadding - layoutInfo.afterContentPadding
+        layoutInfo.singleAxisViewportSize -
+            layoutInfo.beforeContentPadding -
+            layoutInfo.afterContentPadding
 
-    val desiredDistance = positionInLayout(containerSize.toFloat(), item.size.width.toFloat())
+    val desiredDistance =
+        positionInLayout(
+            containerSize.toFloat(),
+            item.size.width.toFloat()
+        )
+
     val itemCurrentPosition = item.offset.x.toFloat()
 
     return itemCurrentPosition - desiredDistance
 }
 
 private val LazyGridLayoutInfo.singleAxisViewportSize: Int
-    get() = if (orientation == Orientation.Vertical) viewportSize.height else viewportSize.width
+    get() = if (orientation == Orientation.Vertical) {
+        viewportSize.height
+    } else {
+        viewportSize.width
+    }
