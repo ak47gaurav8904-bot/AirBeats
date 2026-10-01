@@ -340,6 +340,9 @@ class MusicService :
     )
 
     private var currentQueue: Queue = EmptyQueue
+    // Cancels stale async queue loads when the user starts another song.
+    private var playQueueLoadJob: Job? = null
+    private var playQueueRequestId = 0L
     var queueTitle: String? = null
 
     val currentMediaMetadata = MutableStateFlow<com.darkxvenom.airbeats.models.MediaMetadata?>(null)
@@ -1323,6 +1326,13 @@ class MusicService :
         playWhenReady: Boolean = true,
     ) {
         if (!scope.isActive) scope = CoroutineScope(Dispatchers.Main) + Job()
+
+        // A previous play request may still be waiting for YouTube/network data.
+        // If it finishes after this request, it must not modify the new song's queue.
+        playQueueLoadJob?.cancel()
+        infiniteQueueLoadJob?.cancel()
+        val requestId = ++playQueueRequestId
+
         currentQueue = queue
         queueTitle = null
         val isPermanentShuffle = dataStore.get(PermanentShuffleKey, false)
@@ -1332,7 +1342,7 @@ class MusicService :
             player.prepare()
             player.playWhenReady = playWhenReady
         }
-        scope.launch(SilentHandler) {
+        playQueueLoadJob = scope.launch(SilentHandler) {
             val excludedSongIds = withContext(Dispatchers.IO) { database.getExcludedSongIds().toHashSet() }
             val initialStatus =
                 withContext(Dispatchers.IO) {
@@ -1344,6 +1354,10 @@ class MusicService :
                         status.filterExcluded(excludedSongIds)
                     }
                 }
+
+            // The user may have selected another song while the previous request
+            // was loading. Never let this stale result alter the newer queue.
+            if (requestId != playQueueRequestId || !isActive) return@launch
             if (queue.preloadItem != null && player.playbackState == STATE_IDLE) return@launch
             if (initialStatus.title != null) {
                 queueTitle = initialStatus.title
